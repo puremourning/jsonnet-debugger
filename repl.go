@@ -239,7 +239,7 @@ func (r *ReplDebugger) repl(current ast.Node, lastVal *string, jerr error) {
 		r.dbg.ClearBreakpoints(parts[1])
 	case "c":
 		if current == nil {
-			r.dbg.Launch(r.filename, r.raw, r.jpaths)
+			r.dbg.Launch(r.filename, r.raw, jsonnet.LaunchOptions{Jpaths: r.jpaths})
 		} else {
 			r.dbg.Continue()
 		}
