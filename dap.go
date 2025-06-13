@@ -144,6 +144,23 @@ func (ds *JsonnetDebugSession) dispatchEvents() {
 				}
 			}
 		case *jsonnet.DebugEventExit:
+			if ev.Error != nil {
+				ds.send(&dap.OutputEvent{
+					Event: *newEvent("output"),
+					Body: dap.OutputEventBody{
+						Category: "stderr",
+						Output:   fmt.Sprintf("Error during evaluation: %s\n", ev.Error.Error()),
+					},
+				})
+			} else {
+				ds.send(&dap.OutputEvent{
+					Event: *newEvent("output"),
+					Body: dap.OutputEventBody{
+						Category: "stdout",
+						Output:   ev.Output,
+					},
+				})
+			}
 			e = &dap.TerminatedEvent{
 				Event: *newEvent("terminated"),
 			}
