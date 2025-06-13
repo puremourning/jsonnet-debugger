@@ -344,8 +344,12 @@ func (ds *JsonnetDebugSession) onInitializeRequest(request *dap.InitializeReques
 }
 
 type launchRequest struct {
-	Program string   `json:"program"`
-	JPaths  []string `json:"jpaths"`
+	Program  string            `json:"program"`
+	JPaths   []string          `json:"jpaths"`
+	ExtVars  map[string]string `json:"extVar"`
+	ExtCodes map[string]string `json:"extCode"`
+	TLAVars  map[string]string `json:"tlaVar"`
+	TLACodes map[string]string `json:"tlaCode"`
 }
 
 func (ds *JsonnetDebugSession) onLaunchRequest(request *dap.LaunchRequest) {
@@ -361,7 +365,14 @@ func (ds *JsonnetDebugSession) onLaunchRequest(request *dap.LaunchRequest) {
 		ds.send(newErrorResponse(request.Seq, request.Command, "Failed to open file: "+err.Error()))
 		return
 	}
-	ds.debugger.Launch(lr.Program, string(raw), lr.JPaths)
+	options := jsonnet.LaunchOptions{
+		Jpaths:   lr.JPaths,
+		ExtVars:  lr.ExtVars,
+		ExtCodes: lr.ExtCodes,
+		TLAVars:  lr.TLAVars,
+		TLACodes: lr.TLACodes,
+	}
+	ds.debugger.Launch(lr.Program, string(raw), options)
 	slog.Debug("Starting debugging", "breakpoints", ds.debugger.ActiveBreakpoints(), "file", lr.Program)
 	response := &dap.LaunchResponse{}
 	response.Response = *newResponse(request.Seq, request.Command)
