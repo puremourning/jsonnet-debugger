@@ -1,6 +1,6 @@
 module github.com/grafana/jsonnet-debugger
 
-go 1.21.6
+go 1.23.7
 
 require (
 	github.com/google/go-dap v0.11.0
@@ -13,8 +13,9 @@ require (
 require (
 	github.com/mattn/go-runewidth v0.0.3 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	gopkg.in/yaml.v2 v2.2.7 // indirect
-	sigs.k8s.io/yaml v1.1.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+replace github.com/google/go-jsonnet => github.com/puremourning/go-jsonnet v0.0.0-20250613205343-7cbb8db485d8
