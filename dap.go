@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"log/slog"
+	"maps"
 	"net"
 	"os"
 	"path/filepath"
@@ -370,12 +371,16 @@ func (ds *JsonnetDebugSession) onInitializeRequest(request *dap.InitializeReques
 }
 
 type launchRequest struct {
-	Program  string            `json:"program"`
-	JPaths   []string          `json:"jpaths"`
-	ExtVars  map[string]string `json:"extVar"`
-	ExtCodes map[string]string `json:"extCode"`
-	TLAVars  map[string]string `json:"tlaVar"`
-	TLACodes map[string]string `json:"tlaCode"`
+	Program      string            `json:"program"`
+	JPaths       []string          `json:"jpaths"`
+	ExtVars      map[string]string `json:"extVar"`
+	ExtVarFiles  map[string]string `json:"extVarFile"`
+	ExtCodes     map[string]string `json:"extCode"`
+	ExtCodeFiles map[string]string `json:"extCodeFile"`
+	TLAVars      map[string]string `json:"tlaVar"`
+	TLAVarFiles  map[string]string `json:"tlaVarFile"`
+	TLACodes     map[string]string `json:"tlaCode"`
+	TLACodeFiles map[string]string `json:"tlaCodeFile"`
 }
 
 func (ds *JsonnetDebugSession) onLaunchRequest(request *dap.LaunchRequest) {
@@ -391,12 +396,65 @@ func (ds *JsonnetDebugSession) onLaunchRequest(request *dap.LaunchRequest) {
 		ds.send(newErrorResponse(request.Seq, request.Command, "Failed to open file: "+err.Error()))
 		return
 	}
+	extVars := maps.Clone(lr.ExtVars)
+	extCodes := maps.Clone(lr.ExtCodes)
+	tlaVars := maps.Clone(lr.TLAVars)
+	tlaCodes := maps.Clone(lr.TLACodes)
+
+	for extVar, extVarFile := range lr.ExtVarFiles {
+		if extVarFile == "" {
+			continue
+		}
+		f, err := os.ReadFile(extVarFile)
+		if err != nil {
+			ds.send(newErrorResponse(request.Seq, request.Command, "Failed to open extVarFile: "+err.Error()))
+			return
+		}
+		extVars[extVar] = string(f)
+	}
+
+	for extCode, extCodeFile := range lr.ExtCodeFiles {
+		if extCodeFile == "" {
+			continue
+		}
+		f, err := os.ReadFile(extCodeFile)
+		if err != nil {
+			ds.send(newErrorResponse(request.Seq, request.Command, "Failed to open extCodeFile: "+err.Error()))
+			return
+		}
+		extCodes[extCode] = string(f)
+	}
+
+	for tlaVar, tlaVarFile := range lr.TLAVarFiles {
+		if tlaVarFile == "" {
+			continue
+		}
+		f, err := os.ReadFile(tlaVarFile)
+		if err != nil {
+			ds.send(newErrorResponse(request.Seq, request.Command, "Failed to open tlaVarFile: "+err.Error()))
+			return
+		}
+		tlaVars[tlaVar] = string(f)
+	}
+
+	for tlaCode, tlaCodeFile := range lr.TLACodeFiles {
+		if tlaCodeFile == "" {
+			continue
+		}
+		f, err := os.ReadFile(tlaCodeFile)
+		if err != nil {
+			ds.send(newErrorResponse(request.Seq, request.Command, "Failed to open tlaCodeFile: "+err.Error()))
+			return
+		}
+		tlaCodes[tlaCode] = string(f)
+	}
+
 	options := jsonnet.LaunchOptions{
 		Jpaths:   lr.JPaths,
-		ExtVars:  lr.ExtVars,
-		ExtCodes: lr.ExtCodes,
-		TLAVars:  lr.TLAVars,
-		TLACodes: lr.TLACodes,
+		ExtVars:  extVars,
+		ExtCodes: extCodes,
+		TLAVars:  tlaVars,
+		TLACodes: tlaCodes,
 	}
 	ds.debugger.Launch(lr.Program, string(raw), options)
 	slog.Debug("Starting debugging", "breakpoints", ds.debugger.ActiveBreakpoints(), "file", lr.Program)
